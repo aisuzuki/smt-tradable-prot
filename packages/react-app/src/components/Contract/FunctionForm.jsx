@@ -1,18 +1,15 @@
 import { Button, Col, Divider, Input, Row, Tooltip } from "antd";
 import React, { useState } from "react";
 import Blockies from "react-blockies";
-
 import { Transactor } from "../../helpers";
-import { tryToDisplay, tryToDisplayAsText } from "./utils";
+import tryToDisplay from "./utils";
 
 const { utils, BigNumber } = require("ethers");
 
 const getFunctionInputKey = (functionInfo, input, inputIndex) => {
-  const name = input?.name ? input.name : "input_" + inputIndex + "_";
-  return functionInfo.name + "_" + name + "_" + input.type;
+  const name = input?.name ? input.name : 'input_' + inputIndex + '_'
+  return functionInfo.name + "_" + name + '_' + input.type;
 };
-
-const isReadable = fn => fn.stateMutability === "view" || fn.stateMutability === "pure";
 
 export default function FunctionForm({ contractFunction, functionInfo, provider, gasPrice, triggerRefresh }) {
   const [form, setForm] = useState({});
@@ -162,17 +159,12 @@ export default function FunctionForm({ contractFunction, functionInfo, provider,
     inputs.push(txValueInput);
   }
 
-  const handleForm = returned => {
-    if (returned) {
-      setForm({});
-    }
-  };
-
-  const buttonIcon = isReadable(functionInfo) ? (
-    <Button style={{ marginLeft: -32 }}>Read📡</Button>
-  ) : (
-    <Button style={{ marginLeft: -32 }}>Send💸</Button>
-  );
+  const buttonIcon =
+    functionInfo.type === "call" ? (
+      <Button style={{ marginLeft: -32 }}>Read📡</Button>
+    ) : (
+      <Button style={{ marginLeft: -32 }}>Send💸</Button>
+    );
   inputs.push(
     <div style={{ cursor: "pointer", margin: 2 }} key="goButton">
       <Input
@@ -189,7 +181,7 @@ export default function FunctionForm({ contractFunction, functionInfo, provider,
               const args = functionInfo.inputs.map((input, inputIndex) => {
                 const key = getFunctionInputKey(functionInfo, input, inputIndex);
                 let value = form[key];
-                if (["array", "tuple"].includes(input.baseType)) {
+                if (input.baseType === "array") {
                   value = JSON.parse(value);
                 } else if (input.type === "bool") {
                   if (value === "true" || value === "1" || value === "0x1" || value === "0x01" || value === "0x0001") {
@@ -205,10 +197,10 @@ export default function FunctionForm({ contractFunction, functionInfo, provider,
               if (functionInfo.stateMutability === "view" || functionInfo.stateMutability === "pure") {
                 try {
                   const returned = await contractFunction(...args);
-                  handleForm(returned);
-                  result = tryToDisplayAsText(returned);
-                } catch (err) {
-                  console.error(err);
+                  result = tryToDisplay(returned);
+                }
+                catch (err) {
+                  console.error(err)
                 }
               } else {
                 const overrides = {};
@@ -223,7 +215,6 @@ export default function FunctionForm({ contractFunction, functionInfo, provider,
 
                 // console.log("Running with extras",extras)
                 const returned = await tx(contractFunction(...args, overrides));
-                handleForm(returned);
                 result = tryToDisplay(returned);
               }
 
@@ -259,3 +250,4 @@ export default function FunctionForm({ contractFunction, functionInfo, provider,
     </div>
   );
 }
+
